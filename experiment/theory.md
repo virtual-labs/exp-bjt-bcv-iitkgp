@@ -1,63 +1,101 @@
 ## Theory
 **Introduction:**  
-The boundary between accumulation and depletion is the flat-band voltage and the boundary between depletion and inversion is the threshold voltage.
+BJT B-C Junction C-V Parameter Extraction
 <div align="center">
-    <img src="images/tvic.jpg" alt="Threshold Voltage and Inversion charge">  
-      <p><strong>Fig. 1. Threshold Voltage and Inversion charge</strong></p>
+    <img src="images/th6.png" alt="BJT Base-Collector C-V Characteristics & Parameter Extraction">  
+      <p><strong>Fig. 1. BJT Base-Collector C-V Characteristics & Parameter Extraction</strong></p>
 </div>
 
+The base-collector (B-C) junction capacitance ($C_{bc}$) is a critical parameter in the BJT SPICE model. It models the charge stored at the collector-base junction and is a key factor in determining the high-frequency performance of the transistor (e.g., the Miller effect) and its switching speed (e.g., storage time in saturation).
 
+This capacitance is measured by applying a varying voltage across the B-C junction and measuring the capacitance, typically while the B-E junction is held at zero bias or is reverse-biased.
 
-  
+Like any p-n junction, the total B-C capacitance ($C_{bc}$) has two components:
 
-### MOS Capacitor's three regimes-Accumulation, Depletion, Inversion
+1.  **B-C Depletion Capacitance ($C_{jc}$):** Dominant when the B-C junction is reverse-biased (i.e., in the forward-active region).
+2.  **B-C Diffusion Capacitance ($C_{diff,r}$):** Dominant when the B-C junction is forward-biased (i.e., in the saturation region).
 
-A MOS Capacitor can be in three regimes: accumulation, depletion, and inversion. The boundary between accumulation and depletion is the flat-band voltage, and the boundary between depletion and inversion is the threshold voltage. The flat-band voltage, denoted as V<sub>fb</sub> or V<sub>bi</sub>, is defined as φ<sub>m</sub> - φ<sub>s</sub>, where φ<sub>m</sub> is the work function of the metal and φ<sub>s</sub> is the work function of the semiconductor substrate.
+$$C_{bc} = C_{jc} + C_{diff,r}$$
 
-At the flat-band voltage, the bands are flat, resulting in an electric field of zero throughout the semiconductor. The hole concentration p equals the acceptor concentration, and the charge density ρ is zero.
+---
 
-Accumulation occurs when the gate voltage V is negative, attracting holes to the oxide interface. This causes the valence band to bend up towards the Fermi energy, increasing the hole concentration p near the oxide interface. The Fermi energy in the metal (represented by the black line on the left in the band diagram) moves up for negative voltages, indicating an increase in electron energy.
+## 1. Depletion Capacitance ($C_{jc}$)
 
-In the depletion regime, a positive gate voltage pushes mobile holes away from the oxide, leaving negatively charged acceptors behind. The valence band bends away from the Fermi energy at the oxide, resulting in a lower hole concentration near the oxide. The negative charge in the semiconductor is balanced by a positive charge on the metal surface, as indicated by the charge plot arrow. As the gate voltage increases positively, the depletion width grows, and the bands bend further down. Eventually, the conduction band gets closer to the Fermi energy than the valence band, leading to weak inversion where n > p near the oxide. Strong inversion occurs when n = N<sub>A</sub> (acceptor concentration) at the oxide interface, at the threshold voltage V<sub>T</sub>.
+This capacitance arises from the fixed, uncovered charge in the depletion region (or space-charge region) at the B-C junction.
 
-At V > V<sub>T</sub>, an inversion channel forms at the semiconductor/oxide interface, characterized by a layer of mobile electrons. In the inversion state, the electric field in the semiconductor remains constant, while it increases within the oxide layer.
+### Key SPICE Parameters
 
-### Determining the band bending
+* **`CJC` (B-C Zero-Bias Capacitance):** The value of the depletion capacitance when the applied B-C voltage is zero. (Also known as `CBC`).
+* **`VJC` (B-C Built-in Potential):** The built-in potential of the B-C junction (e.g., ~0.5-0.7V). (Also known as `PBC`).
+* **`MJC` (B-C Grading Coefficient):** Describes the doping profile of the junction (e.g., 0.5 for abrupt, 0.33 for graded). (Also known as `MC`).
+* **`FCC` (Forward-Bias Capacitance Coefficient):** A fitting parameter (default 0.5) to linearize the capacitance in the forward-bias region.
 
-To calculate the band bending, we start with Gauss's law,
+### The Model Equation
 
-$$\\begin{equation} \\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon\_s\\epsilon\_0}. \\end{equation}$$
+The depletion capacitance under reverse bias ($V_{BC} < FCC \cdot VJC$) is modeled by the same equation as a diode:
 
-$$Combining \ this \ with \ \\vec{E}=-\\nabla V \ yields \ the \ Poisson \ equation,$$
+$$C_{jc} = \frac{CJC}{(1 - V_{BC} / VJC)^{MJC}}$$
 
-$$\\begin{equation} \\nabla^2V = -\\frac{\\rho}{\\epsilon\_s\\epsilon\_0}, \\end{equation}$$
+*(Note: For reverse bias, $V_{BC}$ is negative, so the denominator increases and capacitance decreases.)*
 
-where, for a MOS capacitor with a p-type substrate, the charge density is 
-$$\\rho = e\\left(-N\_A-n+p\\right)$$ and the charge carrier concentrations are,
+### Extraction Method: The $1/C^2$ Plot
 
-
-$$\\begin{equation} n=N\_c(300)\\left(\\frac{T}{300}\\right)^{3/2}\\exp\\left(\\frac{E\_F-E\_c}{k\_BT}\\right)\\qquad \\text{and}\\qquad p=N\_v(300)\\left(\\frac{T}{300}\\right)^{3/2}\\exp\\left(\\frac{E\_v-E\_F}{k\_BT}\\right). \\end{equation}$$
-
-Using the relation $$e\\frac{dV}{dx} = -\\frac{E\_v}{dx}$$ the Poisson equation can be written as a second order differential equation for E<sub>v(x)</sub>,
-
-$$ \\begin{equation} \\frac{d^2E\_v}{dx^2} = \\frac{e^2}{\\epsilon\_s\\epsilon\_0}\\left(-N\_A-N\_c\\exp\\left(\\frac{-E\_g-E\_v}{k\_BT}\\right)+N\_v\\exp\\left(\\frac{E\_v}{k\_BT}\\right)\\right). \\end{equation}$$
-
-### Numerical
-
-This differential equation was solved numerically using the shooting method. First the maximum depletion width max(x<sub>p</sub>) and the threshold voltage V<sub>T</sub> are estimated using the analytic formulas from the depletion approximation.
+The parameters `CJC`, `VJC`, and `MJC` are extracted from C-V measurements taken while the B-C junction is **reverse-biased**.
 
 
 
-$$\\begin{equation} x\_p = 2\\sqrt{\\frac{\\epsilon\_{\\text{semi}}\\epsilon\_0 k\_BT}{e^2N\_A}\\ln\\left(\\frac{N\_A}{n\_i}\\right)}. \\end{equation}$$ 
+The extraction method linearizes the model equation. For an **abrupt junction (MJC = 0.5)**, which is a common approximation for the B-C junction, we plot $1/C_{jc}^2$ vs. $V_{BC}$:
 
-$$\\begin{equation} V\_T = \\frac{2t\_{ox}}{\\epsilon\_{ox}}\\sqrt{\\epsilon\_{\\text{semi}}N\_Ak\_BT \\ln \\left (\\frac{N\_A}{n\_i} \\right )} +\\frac{2k\_BT}{e} \\ln \\left (\\frac{N\_A}{n\_i} \\right ) +V\_{fb} \\end{equation}$$
+$$\frac{1}{C_{jc}^2} = \frac{1 - V_{BC} / VJC}{CJC^2} = \left( \frac{1}{CJC^2} \right) - \left( \frac{1}{CJC^2 \cdot VJC} \right) \cdot V_{BC}$$
 
-Far from the oxide, the valence band satisfies the conditions $$E_v=k_BTln(N_AN_v)=E_{v0}E_v=k_BTln⁡(\frac{N_A}{N_v})=E_{v0}$$ and $$dE_vdx=0\frac{dE_v}{dx}=0$$. To determine the band bending, we start a distance of 1.8x<sub>p</sub> from the oxide with $$E\_{v} = k\_BT\\ln\\left(\\frac{N\_A}{N\_v}\\right)=E\_{v0}$$ and a small value of $$dE_vdx=0\frac{dE_v}{dx}=0$$. The Poisson equation is integrated numerically using the midpoint method until the semiconductor oxide interface. This gives us the voltage V<sub>s</sub> at the semiconductor/oxide interface and the electric field E<sub>s</sub> at that point. The voltage on the gate is,
+This equation is in the linear form $y = b + m \cdot x$:
 
+* **$y = 1/C_{jc}^2$**
+* **$x = V_{BC}$** (the applied voltage)
+* **$b = 1/CJC^2$** (the y-intercept)
+* **$m = -1 / (CJC^2 \cdot VJC)$** (the slope)
 
-$$\\begin{equation} V = \\frac{\\epsilon\_{\\text{semi}}E\_s}{\\epsilon\_{\\text{ox}}}t\_{\\text{ox}}+V\_s. \\end{equation}$$
+**Extraction Procedure:**
 
-This is the correct gate voltage for the boundary conditions we chose on the right, but generally, it may not be the desired gate voltage. The starting position of integration is then adjusted either to the right or left, and the integration process is repeated until the calculated voltage, obtained through numerical integration, matches V<sub>shoot</sub>. The simulation produces incorrect results if the valence band or conduction band approach within approximately 3k<sub>BT</sub> from the Fermi energy. This limitation arises because the formulas for nnn and ppp are valid only when the valence and conduction bands are sufficiently far from the Fermi energy.
+1.  **Measure C-V:** Measure the B-C capacitance $C_{bc}$ at several reverse bias voltages $V_{BC}$ (e.g., from 0V to -20V), while $V_{BE} = 0$. In this condition, $C_{bc} \approx C_{jc}$.
+2.  **Plot Data:** Create a plot of $1/C_{bc}^2$ (y-axis) versus $V_{BC}$ (x-axis). The data should form a straight line.
+3.  **Extract `VJC`:** Extend the straight line to the x-axis (where $y=0$). The x-intercept is the junction potential, **`VJC`**.
+4.  **Extract `CJC`:** The y-intercept (at $V_{BC} = 0$) is $1/CJC^2$. Therefore, **`CJC`** is calculated as:
+    $$CJC = \frac{1}{\sqrt{\text{y-intercept}}}$$
+5.  **Verify `MJC`:** If the plot is a straight line, the assumption that `MJC = 0.5` is correct. If it is curved, a different `MJC` value (e.g., 0.33 for a graded junction, requiring a $1/C_{bc}^3$ plot) may be needed.
+
+---
+
+## 2. Diffusion Capacitance ($C_{diff,r}$)
+
+This capacitance arises from the charge of minority carriers injected into the base and collector when the **B-C junction is forward-biased** (i.e., when the transistor is in saturation).
+
+### Key SPICE Parameter
+
+* **`TR` (Reverse Transit Time):** Represents the mean time for carriers injected from the collector to transit through the base (in reverse-active mode).
+
+### The Model Equation
+
+The reverse diffusion capacitance is proportional to the reverse transit time and the change in the reverse injection current:
+
+$$C_{diff,r} = TR \cdot \frac{dI_{E,ideal}}{dV_{BC}} \approx TR \cdot \frac{I_{E,ideal}}{NR \cdot V_T}$$
+
+Where $I_{E,ideal}$ is the ideal emitter current from the reverse Gummel plot.
+
+### Extraction Method
+
+The reverse transit time `TR` is extracted from measurements taken while the B-C junction is **forward-biased** (i.e., in the saturation or reverse-active region).
+
+**Extraction Procedure:**
+
+1.  **Measure $C_{bc}$ in Forward Bias:** Measure the total capacitance $C_{bc}$ at one or more forward-bias $V_{BC}$ values (e.g., 0.2V, 0.3V, 0.4V).
+2.  **Calculate $C_{jc}$:** At these forward-bias points, the depletion capacitance $C_{jc}$ is still present. Calculate its value using the forward-bias portion of its model (which uses the `FCC` parameter).
+3.  **Isolate $C_{diff,r}$:** Subtract the calculated depletion capacitance from the total measured capacitance:
+    $$C_{diff,r} = C_{bc, \text{measured}} - C_{jc, \text{calculated}}$$
+4.  **Extract `TR`:** Re-arrange the model equation to solve for `TR`. You will need the values of the ideal emitter current ($I_{E,ideal}$) from the **reverse Gummel plot** at the same $V_{BC}$ points.
+    $$TR = \frac{C_{diff,r}}{(I_{E,ideal} / (NR \cdot V_T))}$$
+
+Alternatively, `TR` can be extracted from high-frequency S-parameter measurements or by measuring the storage time ($t_s$) of the transistor when turning off from saturation.
 
  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>    
  
