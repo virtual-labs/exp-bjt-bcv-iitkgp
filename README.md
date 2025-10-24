@@ -7,7 +7,7 @@
 <b>Discipline | <b> Electronic Engineering 
 :--|:--|
 <b> Lab | <b> **Technology CAD Laboratory**
-<b> Experiment|     <b> **Extraction of diode SPICE parameters related to Capacitance-Voltage (C-V) characteristics**
+<b> Experiment|     <b> **Extraction of bipolar SPICE Gummel-Poon parameters related to B-C junction Capacitance-Voltage (C-V) characteristics**
 
 
 ### About the Experiment 
