@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BJT B-C Junction C-V Parameter Extractor</title>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF (Core) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom styles for better number inputs */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        /* Ensure charts are responsive but don't shrink too small */
+        .chart-container {
+            position: relative;
+            min-height: 400px;
+            width: 100%;
+        }
+
+        /* Styles for the hidden PDF report template */
+        #report-content {
+            width: 8.5in;
+            min-height: 11in;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            padding: 0.5in;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        .report-header { text-align: left; margin-bottom: 20px; }
+        .report-header h1 { font-size: 18px; font-weight: 700; margin: 0; }
+        .report-header p { font-size: 14px; margin: 4px 0; }
+        .report-date-time { margin-bottom: 30px; }
+        .report-date-time p { font-size: 12px; margin: 2px 0; color: #333; }
+        .report-main-title { text-align: center; margin-bottom: 10px; }
+        .report-main-title h2 { font-size: 24px; font-weight: 700; color: #005a9c; margin: 0; }
+        .report-section-title { font-size: 16px; font-weight: 700; color: #333; margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 4px;}
+
+        .report-table-container {
+            max-height: 250px; /* Limit table height to prevent extreme length */
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+        }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            font-size: 10px; 
+            text-align: left;
+        }
+        .report-table th { background-color: #f4f4f4; font-weight: 600; }
+        .report-table td { font-family: 'Courier New', Courier, monospace; }
+
+        .report-params { margin-top: 10px; }
+        .report-params strong { font-size: 13px; }
+        .report-params pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            background-color: #f8f8f8;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .report-chart-container {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .report-footer { margin-top: 40px; font-size: 14px; }
+        .report-signatures { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .report-signature-block { width: 45%; border-top: 1px solid #000; padding-top: 8px; }
+
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+            BJT B-C Junction C-V Parameter Extractor
+        </h1>
+
+        <!-- View 1: Data Extraction -->
+        <div id="extractionView">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Left Column: Data Input & Controls -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">1. Input Data & Extraction</h2>
+                    
+                    <!-- Data Input Textarea -->
+                    <label for="dataInput" class="block text-sm font-medium text-gray-600 mb-2">
+                        Enter your Vbc, Cbc data (one pair per line):
+                    </label>
+                    <textarea id="dataInput" rows="12" class="w-full p-3 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500">
+0.200000000000000,0.000000000001550
+0.100000000000000,0.000000000001460
+0.000000000000000,0.000000000001390
+-0.100000000000000,0.000000000001340
+-0.200000000000000,0.000000000001300
+-0.300000000000000,0.000000000001260
+-0.400000000000000,0.000000000001230
+-0.500000000000000,0.000000000001200
+-0.600000000000000,0.000000000001180
+-0.700000000000000,0.000000000001160
+-0.800000000000000,0.000000000001140
+-0.900000000000000,0.000000000001120
+-1.000000000000000,0.000000000001100
+</textarea>
+                    
+                    <!-- Control Buttons -->
+                    <div class="flex flex-wrap gap-3 mt-4">
+                        <button id="plotDataBtn" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-150">
+                            Plot my Data
+                        </button>
+                        <button id="extractParamsBtn" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-150">
+                            Extract Parameters
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Note: CJC and VJC are extracted from a 1/C² vs. V plot (V &lt; 0). MC and FC are set to defaults (0.5).
+                    </p>
+
+                    <!-- Results Output -->
+                    <div id="resultsOutput" class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <h3 class="text-lg font-semibold text-gray-700 col-span-1 sm:col-span-2">Extracted Parameters:</h3>
+                        <div>
+                            <label for="resCJC" class="block text-sm font-medium text-gray-600">B-C Zero-bias Cap (CJC) [F]</label>
+                            <input type="text" id="resCJC" readonly class="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md font-mono text-sm">
+                        </div>
+                        <div>
+                            <label for="resVJC" class="block text-sm font-medium text-gray-600">B-C Built-in Pot (VJC) [V]</label>
+                            <input type="text" id="resVJC" readonly class="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md font-mono text-sm">
+                        </div>
+                        <div>
+                            <label for="resMC" class="block text-sm font-medium text-gray-600">B-C Grading Coeff (MC)</label>
+                            <input type="text" id="resMC" readonly class="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md font-mono text-sm">
+                        </div>
+                        <div>
+                            <label for="resFC" class="block text-sm font-medium text-gray-600">Fwd-Bias Coeff (FC)</label>
+                            <input type="text" id="resFC" readonly class="w-full p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md font-mono text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- Simulation Button -->
+                    <button id="simulateBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-150 mt-6 font-semibold disabled:bg-gray-400" disabled>
+                        Go to Simulation &raquo;
+                    </button>
+                </div>
+
+                <!-- Right Column: Data Plot -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Measured B-C C-V Characteristics (Cbc vs. Vbc)</h2>
+                    <div class="chart-container">
+                        <canvas id="cvChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- View 2: Simulation -->
+        <div id="simulationView" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Left Column: Simulation Controls -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">2. Simulation Controls</h2>
+                    
+                    <button id="backToExtractBtn" class="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition duration-150 mb-6 font-semibold">
+                        &laquo; Back to Extractor
+                    </button>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="simCJC" class="block text-sm font-medium text-gray-600">B-C Zero-bias Cap (CJC) [F]</label>
+                            <input type="number" id="simCJC" step="1e-15" class="w-full p-2 mt-1 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="simVJC" class="block text-sm font-medium text-gray-600">B-C Built-in Pot (VJC) [V]</label>
+                            <input type="number" id="simVJC" step="0.01" class="w-full p-2 mt-1 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="simMC" class="block text-sm font-medium text-gray-600">B-C Grading Coeff (MC)</label>
+                            <input type="number" id="simMC" step="0.01" class="w-full p-2 mt-1 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="simFC" class="block text-sm font-medium text-gray-600">Fwd-Bias Coeff (FC)</label>
+                            <input type="number" id="simFC" step="0.01" class="w-full p-2 mt-1 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4">
+                        Change any parameter to dynamically regenerate the simulation plot.
+                    </p>
+                </div>
+
+                <!-- Right Column: Simulation Plot -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Simulated vs. Measured B-C C-V Characteristics</h2>
+                    <div class="chart-container">
+                        <canvas id="simChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 text-center flex flex-wrap justify-center gap-4">
+                <button id="generateReportBtn" class="bg-teal-600 text-white py-3 px-8 rounded-md hover:bg-teal-700 transition duration-150 font-semibold shadow-md disabled:bg-gray-400" disabled>
+                    Generate Report
+                </button>
+                <button id="downloadSimDataBtn" class="bg-blue-600 text-white py-3 px-8 rounded-md hover:bg-blue-700 transition duration-150 font-semibold shadow-md disabled:bg-gray-400" disabled>
+                    Download Simulated Data
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 
+    ====================================================================
+    HIDDEN REPORT TEMPLATE
+    This div is styled to look like a paper report.
+    It's positioned off-screen and will be populated by JavaScript,
+    then captured with html2canvas for PDF generation.
+    ====================================================================
+    -->
+    <div id="report-container" style="position: absolute; left: -9999px; width: 8.5in;">
+        <div id="report-content">
+            <!-- Header -->
+            <div class="report-header">
+                <h1>Extraction of bipolar SPICE Gummel-Poon parameters related to B-C junction Capacitance-Voltage (C-V)</h1>
+                <p>TCAD Lab IITKGP</p>
+            </div>
+            <div class="report-date-time">
+                <p id="report-date"></p>
+                <p id="report-time"></p>
+            </div>
+            <div class="report-main-title">
+                <h2>B-C C-V (Cbc-Vbc) Extraction & Simulation Results</h2>
+            </div>
+
+            <!-- Section 1: Measured Data -->
+            <h3 class="report-section-title">1. Measured Data & Extracted Parameters</h3>
+            <div class="report-table-container">
+                <table class="report-table" id="measured-data-table">
+                    <thead>
+                        <tr><th>Vbc (V)</th><th>Cbc (F)</th></tr>
+                    </thead>
+                    <tbody id="measured-data-body">
+                        <!-- Data will be injected here by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="report-params">
+                <strong>Extracted Parameters:</strong>
+                <pre id="extracted-params-pre"></pre>
+            </div>
+
+            <!-- Section 2: Simulated Data -->
+            <h3 class="report-section-title">2. Simulated Data & Tuned Parameters</h3>
+            <div class="report-table-container">
+                <table class="report-table" id="simulated-data-table">
+                    <thead>
+                        <tr><th>Vbc (V)</th><th>Cbc (F)</th></tr>
+                    </thead>
+                    <tbody id="simulated-data-body">
+                        <!-- Data will be injected here by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="report-params">
+                <strong>Tuned Parameters:</strong>
+                <pre id="tuned-params-pre"></pre>
+            </div>
+
+            <!-- Section 3: Chart -->
+            <h3 class="report-section-title">3. Simulated vs. Measured B-C C-V Characteristics</h3>
+            <div class="report-chart-container">
+                <img id="report-chart-img" src="" alt="Simulated vs. Measured Cbc-Vbc Plot" style="width: 100%; height: auto;" />
+            </div>
+
+            <!-- Footer -->
+            <div class="report-footer">
+                <div class="report-signatures">
+                    <div class="report-signature-block">Signature of Student</div>
+                    <div class="report-signature-block" style="text-align: right;">Signature of Faculty</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DOM Elements ---
+        const dataInput = document.getElementById('dataInput');
+        const plotDataBtn = document.getElementById('plotDataBtn');
+        const extractParamsBtn = document.getElementById('extractParamsBtn');
+        const simulateBtn = document.getElementById('simulateBtn');
+        const backToExtractBtn = document.getElementById('backToExtractBtn');
+        
+        const extractionView = document.getElementById('extractionView');
+        const simulationView = document.getElementById('simulationView');
+        
+        const resCJC = document.getElementById('resCJC');
+        const resVJC = document.getElementById('resVJC');
+        const resMC = document.getElementById('resMC');
+        const resFC = document.getElementById('resFC');
+        
+        const simCJC = document.getElementById('simCJC');
+        const simVJC = document.getElementById('simVJC');
+        const simMC = document.getElementById('simMC');
+        const simFC = document.getElementById('simFC');
+        
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        const downloadSimDataBtn = document.getElementById('downloadSimDataBtn');
+        
+        const cvChartCtx = document.getElementById('cvChart').getContext('2d');
+        const simChartCtx = document.getElementById('simChart').getContext('2d');
+
+        // --- Chart Instances ---
+        let cvChartInstance = null;
+        let simChartInstance = null;
+        
+        // --- Global State ---
+        let extractedParams = { CJC: null, VJC: null, MC: null, FC: null };
+
+        // --- Utility Functions ---
+
+        /**
+         * Parses the raw data from the textarea.
+         * @returns {Array<Object>} Array of {v, c} points.
+         */
+        function parseData() {
+            const text = dataInput.value.trim();
+            return text.split('\n')
+                .map(line => {
+                    const parts = line.split(',');
+                    if (parts.length === 2) {
+                        const v = parseFloat(parts[0]);
+                        const c = parseFloat(parts[1]);
+                        if (!isNaN(v) && !isNaN(c) && c > 0) {
+                            return { v, c };
+                        }
+                    }
+                    return null;
+                })
+                .filter(p => p !== null)
+                .sort((a, b) => a.v - b.v); // Sort by voltage
+        }
+
+        /**
+         * Performs linear regression on a set of {x, y} points.
+         * @param {Array<Object>} points - Array of {x, y} objects.
+         * @returns {Object} { m: slope, c: y-intercept }
+         */
+        function linearRegression(points) {
+            const n = points.length;
+            if (n < 2) return { m: 0, c: 0 };
+            
+            let sumX = 0, sumY = 0, sumXY = 0, sumXsq = 0;
+            
+            points.forEach(p => {
+                sumX += p.x;
+                sumY += p.y;
+                sumXY += p.x * p.y;
+                sumXsq += p.x * p.x;
+            });
+
+            const denominator = (n * sumXsq - sumX * sumX);
+            if (Math.abs(denominator) < 1e-10) return { m: 0, c: 0 }; // Avoid division by zero
+
+            const m = (n * sumXY - sumX * sumY) / denominator;
+            const c = (sumY - m * sumX) / n;
+            
+            return { m, c };
+        }
+        
+        /**
+         * Generic function to create/update a C-V plot (linear axes).
+         */
+        function createChart(ctx, chartInstance, datasets, title) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            return new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Vbc (V)'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Capacitance (F)'
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return value.toExponential(2);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += `(${context.parsed.x.toFixed(3)}V, ${context.parsed.y.toExponential(3)}F)`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 3
+                        },
+                        line: {
+                            tension: 0 // Straight lines between points
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Core Logic Functions ---
+
+        /**
+         * Plots the user-provided data on the extraction chart.
+         */
+        function plotData() {
+            const data = parseData();
+            if (data.length === 0) {
+                return;
+            }
+            
+            const cData = data.map(p => ({ x: p.v, y: p.c }));
+            
+            const datasets = [
+                {
+                    label: 'Cbc (Measured)',
+                    data: cData,
+                    borderColor: 'rgb(29, 78, 216)',
+                    backgroundColor: 'rgba(29, 78, 216, 0.5)',
+                    showLine: true
+                }
+            ];
+            
+            cvChartInstance = createChart(cvChartCtx, cvChartInstance, datasets, 'Measured B-C C-V Characteristics');
+        }
+
+        /**
+         * Extracts SPICE parameters from the data.
+         */
+        function extractCVParameters() {
+            const data = parseData();
+            // 1. Filter for reverse-bias points only
+            const reverseData = data.filter(p => p.v <= 0);
+            if (reverseData.length < 2) {
+                alert("Not enough reverse-bias data (V <= 0) to extract parameters.");
+                return;
+            }
+
+            // 2. Transform data to 1/C^2 vs. V
+            const transformedData = reverseData.map(p => ({
+                x: p.v, // V is x-axis
+                y: 1.0 / (p.c * p.c) // 1/C^2 is y-axis
+            }));
+
+            // 3. Perform linear regression
+            // y = m*x + c_intercept
+            // 1/C^2 = m*V + c_intercept
+            const regression = linearRegression(transformedData);
+            const m = regression.m;
+            const c_intercept = regression.c;
+
+            if (c_intercept <= 0 || m >= 0) {
+                alert(`Extraction failed: Invalid regression. m=${m.toExponential(2)}, c_int=${c_intercept.toExponential(2)}. Check data.`);
+                return;
+            }
+
+            // 4. Extract parameters
+            // c_intercept = 1 / CJC^2
+            // m = -1 / (VJC * CJC^2)
+            // (Assuming MC = 0.5)
+
+            const CJC = 1.0 / Math.sqrt(c_intercept);
+            const VJC = -1.0 / (m * CJC * CJC);
+            const MC = 0.5; // Assume abrupt junction (MC=0.5) for 1/C^2 method
+            const FC = 0.5; // SPICE default
+
+            // --- Store and Display Results ---
+            extractedParams.CJC = CJC;
+            extractedParams.VJC = VJC;
+            extractedParams.MC = MC;
+            extractedParams.FC = FC;
+            
+            resCJC.value = extractedParams.CJC.toExponential(4);
+            resVJC.value = extractedParams.VJC.toFixed(4);
+            resMC.value = extractedParams.MC.toFixed(4);
+            resFC.value = extractedParams.FC.toFixed(4);
+
+            // --- Enable Simulation Button ---
+            simulateBtn.disabled = false;
+        }
+
+        /**
+         * Calculates capacitance based on the full SPICE C-V formula.
+         */
+        function calculateCapacitance(V, CJC, VJC, MC, FC) {
+            if (V < FC * VJC) {
+                // Reverse-bias and small forward-bias region
+                return CJC * Math.pow(1.0 - V / VJC, -MC);
+            } else {
+                // Forward-bias region
+                const C_fwd_bias_knee = CJC * Math.pow(1.0 - FC, -MC);
+                const slope_fwd_bias = CJC * (MC / VJC) * Math.pow(1.0 - FC, -1.0 - MC);
+                return C_fwd_bias_knee + slope_fwd_bias * (V - FC * VJC);
+            }
+        }
+
+
+        /**
+         * Switches to the simulation view.
+         */
+        function showSimulationView() {
+            // Ensure parameters are extracted first
+            if (extractedParams.CJC === null) {
+                alert("Please extract parameters before simulating.");
+                return; 
+            }
+            
+            // Populate sim inputs
+            simCJC.value = extractedParams.CJC;
+            simVJC.value = extractedParams.VJC;
+            simMC.value = extractedParams.MC;
+            simFC.value = extractedParams.FC;
+            
+            // Show/hide views
+            extractionView.classList.add('hidden');
+            simulationView.classList.remove('hidden');
+            
+            // Run initial simulation
+            updateSimulation();
+        }
+
+        /**
+         * Switches back to the extraction view.
+         */
+        function showExtractionView() {
+            simulationView.classList.add('hidden');
+            extractionView.classList.remove('hidden');
+        }
+
+        /**
+         * Updates the simulation plot based on sim input values.
+         */
+        function updateSimulation() {
+            // Read sim values
+            const CJC_sim = parseFloat(simCJC.value);
+            const VJC_sim = parseFloat(simVJC.value);
+            const MC_sim = parseFloat(simMC.value);
+            const FC_sim = parseFloat(simFC.value);
+
+            if (isNaN(CJC_sim) || isNaN(VJC_sim) || isNaN(MC_sim) || isNaN(FC_sim)) {
+                return; // Invalid inputs
+            }
+
+            // Generate simulated data
+            const simData = getSimulatedDataPoints();
+            const cSimData = simData.map(p => ({ x: p.v, y: p.c }));
+            
+            // Get original measured data for comparison
+            const measuredData = parseData();
+            const cMeasData = measuredData.map(p => ({ x: p.v, y: p.c }));
+
+            const datasets = [
+                {
+                    label: 'Cbc (Simulated)',
+                    data: cSimData,
+                    borderColor: 'rgb(220, 38, 38)',
+                    backgroundColor: 'rgba(220, 38, 38, 0.5)',
+                    showLine: true,
+                    pointRadius: 0, // Hide points for a smooth line
+                    borderDash: [5, 5] // Dashed line
+                },
+                {
+                    label: 'Cbc (Measured)',
+                    data: cMeasData,
+                    borderColor: 'rgb(29, 78, 216)',
+                    backgroundColor: 'rgba(29, 78, 216, 0.5)',
+                    showLine: true
+                }
+            ];
+            
+            simChartInstance = createChart(simChartCtx, simChartInstance, datasets, 'Simulated vs. Measured B-C C-V Characteristics');
+
+            // Enable report/download buttons
+            generateReportBtn.disabled = false;
+            downloadSimDataBtn.disabled = false;
+        }
+
+        /**
+         * Generates an array of simulated data points based on current sim inputs.
+         * @returns {Array<Object>} Array of {v, c} points
+         */
+        function getSimulatedDataPoints() {
+            // Read sim values
+            const CJC_sim = parseFloat(simCJC.value);
+            const VJC_sim = parseFloat(simVJC.value);
+            const MC_sim = parseFloat(simMC.value);
+            const FC_sim = parseFloat(simFC.value);
+
+            if (isNaN(CJC_sim) || isNaN(VJC_sim) || isNaN(MC_sim) || isNaN(FC_sim)) {
+                return []; // Invalid inputs
+            }
+
+            const simData = [];
+            const data = parseData();
+            if (data.length === 0) return [];
+
+            const vMin = Math.min(...data.map(p => p.v));
+            const vMax = Math.max(...data.map(p => p.v));
+            const numSteps = 100;
+            const vStep = (vMax - vMin) / numSteps;
+            
+            for (let v = vMin; v <= vMax; v += vStep) {
+                const c_calc = calculateCapacitance(v, CJC_sim, VJC_sim, MC_sim, FC_sim);
+                simData.push({ v: v, c: c_calc });
+            }
+            // Ensure the last point is included
+            const c_calc_last = calculateCapacitance(vMax, CJC_sim, VJC_sim, MC_sim, FC_sim);
+            simData.push({ v: vMax, c: c_calc_last });
+
+            return simData.filter(p => p.c >= 0);
+        }
+
+        /**
+         * Generates and downloads a PDF report using html2canvas.
+         */
+        function generateReport() {
+            // 0. Check if data is available
+            if (!simChartInstance || !extractedParams.CJC) {
+                alert("Please extract parameters and simulate data first.");
+                return;
+            }
+
+            const btn = document.getElementById('generateReportBtn');
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+
+            try {
+                // 1. Get all data
+                const measuredData = parseData();
+                const simulatedData = getSimulatedDataPoints();
+                const chartImageData = simChartInstance.toBase64Image('image/png', 1.0);
+                const now = new Date();
+
+                // 2. Populate Header
+                document.getElementById('report-date').textContent = `Date: ${now.toLocaleDateString()}`;
+                document.getElementById('report-time').textContent = `Time: ${now.toLocaleTimeString()}`;
+
+                // 3. Populate Measured Data Table
+                const measuredTableBody = document.getElementById('measured-data-body');
+                measuredTableBody.innerHTML = ''; // Clear old data
+                measuredData.forEach(p => {
+                    const row = `<tr><td>${p.v.toFixed(10)}</td><td>${p.c.toExponential(6)}</td></tr>`;
+                    measuredTableBody.innerHTML += row;
+                });
+
+                // 4. Populate Extracted Params
+                const extractedParamsPre = document.getElementById('extracted-params-pre');
+                extractedParamsPre.textContent = 
+`B-C Zero-bias Cap (CJC):       ${resCJC.value} F
+B-C Built-in Pot (VJC):      ${resVJC.value} V
+B-C Grading Coeff (MC):        ${resMC.value}
+Fwd-Bias Coeff (FC):           ${resFC.value}`;
+
+                // 5. Populate Simulated Data Table
+                const simulatedTableBody = document.getElementById('simulated-data-body');
+                simulatedTableBody.innerHTML = ''; // Clear old data
+                simulatedData.forEach(p => {
+                    const row = `<tr><td>${p.v.toFixed(4)}</td><td>${p.c.toExponential(6)}</td></tr>`;
+                    simulatedTableBody.innerHTML += row;
+                });
+
+                // 6. Populate Tuned Params
+                const tunedParamsPre = document.getElementById('tuned-params-pre');
+                tunedParamsPre.textContent = 
+`B-C Zero-bias Cap (CJC):       ${parseFloat(simCJC.value).toExponential(4)} F
+B-C Built-in Pot (VJC):      ${parseFloat(simVJC.value).toFixed(4)} V
+B-C Grading Coeff (MC):        ${parseFloat(simMC.value).toFixed(4)}
+Fwd-Bias Coeff (FC):           ${parseFloat(simFC.value).toFixed(4)}`;
+
+                // 7. Add Chart Image
+                const reportChartImg = document.getElementById('report-chart-img');
+                reportChartImg.src = chartImageData;
+
+                // 8. Run html2canvas
+                const content = document.getElementById('report-content');
+                const { jsPDF } = window.jspdf;
+
+                // Use a timeout to allow the <img> tag to load the src
+                setTimeout(() => {
+                    html2canvas(content, {
+                        scale: 2, // Higher scale for better resolution
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: content.scrollWidth,
+                        windowHeight: content.scrollHeight
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        
+                        const pdf = new jsPDF('p', 'pt', 'letter');
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                        const canvasWidth = canvas.width;
+                        const canvasHeight = canvas.height;
+                        const canvasAspectRatio = canvasHeight / canvasWidth;
+
+                        let finalPdfWidth = pdfWidth;
+                        let finalPdfHeight = pdfWidth * canvasAspectRatio;
+
+                        if (finalPdfHeight > pdfHeight) {
+                            finalPdfHeight = pdfHeight;
+                            finalPdfWidth = pdfHeight / canvasAspectRatio;
+                        }
+                        
+                        const xOffset = (pdfWidth - finalPdfWidth) / 2;
+
+                        pdf.addImage(imgData, 'PNG', xOffset, 0, finalPdfWidth, finalPdfHeight, undefined, 'FAST');
+                        pdf.save('bjt_bc_cv_report.pdf');
+
+                        // Restore button
+                        btn.textContent = 'Generate Report';
+                        btn.disabled = false;
+                    }).catch(err => {
+                        console.error("Error generating PDF:", err);
+                        alert("An error occurred while generating the report. See console for details.");
+                        btn.textContent = 'Generate Report';
+                        btn.disabled = false;
+                    });
+                }, 200); // 200ms delay to ensure image is fully loaded into the template
+
+            } catch (error) {
+                console.error("Error preparing report:", error);
+                alert("An error occurred while preparing the report. See console for details.");
+                btn.textContent = 'Generate Report';
+                btn.disabled = false;
+            }
+        }
+
+        /**
+         * Generates and downloads a CSV file of the simulated data.
+         */
+        function downloadSimulatedData() {
+            // 0. Check if data is available
+            if (!simChartInstance) {
+                alert("Please simulate data first.");
+                return;
+            }
+
+            const btn = document.getElementById('downloadSimDataBtn');
+            btn.textContent = 'Downloading...';
+            btn.disabled = true;
+
+            try {
+                // 1. Get simulated data
+                const simulatedData = getSimulatedDataPoints();
+                if (simulatedData.length === 0) {
+                    alert("No simulated data to download.");
+                    return;
+                }
+
+                // 2. Create CSV content
+                let csvContent = "Vbc (V),Cbc (F)\n";
+                simulatedData.forEach(p => {
+                    csvContent += `${p.v.toFixed(10)},${p.c.toExponential(6)}\n`;
+                });
+
+                // 3. Create Blob and trigger download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "simulated_bjt_bc_cv_data.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                console.error("Error downloading CSV:", error);
+                alert("An error occurred while downloading the data. See console for details.");
+            } finally {
+                // 4. Restore button
+                btn.textContent = 'Download Simulated Data';
+                btn.disabled = false;
+            }
+        }
+
+        // --- Event Listeners ---
+        plotDataBtn.addEventListener('click', plotData);
+        extractParamsBtn.addEventListener('click', extractCVParameters);
+        simulateBtn.addEventListener('click', showSimulationView);
+        backToExtractBtn.addEventListener('click', showExtractionView);
+
+        // Add listeners to sim inputs for dynamic updates
+        const simInputs = [simCJC, simVJC, simMC, simFC];
+        simInputs.forEach(input => {
+            input.addEventListener('input', updateSimulation);
+        });
+        
+        generateReportBtn.addEventListener('click', generateReport);
+        downloadSimDataBtn.addEventListener('click', downloadSimulatedData);
+        
+        // Plot default data on page load
+        window.onload = plotData;
+
+    </script>
+<script src="../assets/js/iframeResize.js"></script>
+        
+        </body>
+</html>

@@ -1,0 +1,115 @@
+  {
+	  "version": 2.0,
+  "questions": [
+    {
+    "question": "1. What two terminals are used to measure the base-collector (B-C) junction capacitance?",
+    "answers": {
+      "a": "Emitter and Collector",
+      "b": "Base and Collector",
+      "c": "Base and Emitter",
+      "d": "Collector and Ground"
+    },
+    "correctAnswer": "b",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "2. Which SPICE parameter represents the base-collector capacitance when there is zero voltage applied across the B-C junction?",
+    "answers": {
+      "a": "`VJC` (B-C Built-in Potential)",
+      "b": "`CJE` (B-E Zero-Bias Capacitance)",
+      "c": "`MJC` (B-C Grading Coefficient)",
+      "d": "`CJC` (B-C Zero-Bias Capacitance)"
+    },
+    "correctAnswer": "d",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "3. What does the SPICE parameter `VJC` (also known as `PBC`) represent in the B-C capacitance model?",
+    "answers": {
+      "a": "The reverse breakdown voltage of the collector.",
+      "b": "The forward voltage drop of the B-C junction.",
+      "c": "The built-in potential (contact potential) of the B-C junction.",
+      "d": "The voltage at which the capacitance doubles."
+    },
+    "correctAnswer": "c",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "4. The SPICE parameter `MJC` (B-C Grading Coefficient) describes what physical characteristic of the junction?",
+    "answers": {
+      "a": "How the junction capacitance changes with temperature.",
+      "b": "The physical area of the collector-base junction.",
+      "c": "The doping profile (e.g., abrupt or graded) of the junction.",
+      "d": "The transit time of carriers across the junction."
+    },
+    "correctAnswer": "c",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "5. For a standard BJT with an abrupt (step-graded) base-collector junction, what value is the grading coefficient `MJC` typically set to?",
+    "answers": {
+      "a": "Approximately one half",
+      "b": "Approximately one third",
+      "c": "Exactly one",
+      "d": "Exactly zero"
+    },
+    "correctAnswer": "a",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "6. To properly extract the *depletion* capacitance parameters of the B-C junction, the measurement is performed under what bias condition?",
+    "answers": {
+      "a": "Forward bias (saturation region)",
+      "b": "Reverse bias (forward-active region)",
+      "c": "Zero bias only",
+      "d": "Avalanche breakdown"
+    },
+    "correctAnswer": "b",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "7. For an abrupt B-C junction, which type of plot is used to create a straight line from the C-V data, allowing for easy extraction?",
+    "answers": {
+      "a": "A plot of capacitance versus voltage (linear scale).",
+      "b": "A plot of the inverse of capacitance squared versus voltage.",
+      "c": "A plot of the natural log of capacitance versus voltage.",
+      "d": "A plot of the inverse of capacitance cubed versus voltage."
+    },
+    "correctAnswer": "b",
+    "difficulty": "advanced"
+  },
+  {
+    "question": "8. When using the correct linearized plot (e.g., inverse capacitance squared vs. voltage), what parameter is found by extending the straight line to the voltage axis intercept?",
+    "answers": {
+      "a": "The zero-bias capacitance (`CJC`)",
+      "b": "The grading coefficient (`MJC`)",
+      "c": "The built-in potential (`VJC`)",
+      "d": "The collector resistance (`RC`)"
+    },
+    "correctAnswer": "c",
+    "difficulty": "advanced"
+  },
+  {
+    "question": "9. How is the zero-bias B-C capacitance (`CJC`) most directly determined from the C-V measurement data?",
+    "answers": {
+      "a": "By measuring the slope of the linearized plot.",
+      "b": "By measuring the capacitance when the applied voltage is exactly zero.",
+      "c": "By finding the voltage-axis intercept of the linearized plot.",
+      "d": "By measuring the capacitance in deep forward bias."
+    },
+    "correctAnswer": "b",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "10. The *slope* of the linearized C-V plot (e.g., inverse capacitance squared vs. voltage) is physically related to what property of the semiconductor?",
+    "answers": {
+      "a": "The transit time of the base",
+      "b": "The doping concentration of the junction",
+      "c": "The intrinsic carrier concentration",
+      "d": "The forward beta of the transistor"
+    },
+    "correctAnswer": "b",
+    "difficulty": "advanced"
+  }
+  ]
+}

@@ -1,0 +1,117 @@
+
+  {
+	  "version": 2.0,
+  "questions": [
+   {
+    "question": "1. Which SPICE parameter models the *reverse* transit time, which is the primary factor in the base-collector *diffusion* capacitance?",
+    "answers": {
+      "a": "`TF` (Forward Transit Time)",
+      "b": "`TR` (Reverse Transit Time)",
+      "c": "`CJC` (B-C Zero-Bias Capacitance)",
+      "d": "`VJC` (B-C Built-in Potential)"
+    },
+    "correctAnswer": "b",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "2. For a typical BJT, how does the base-collector zero-bias capacitance (`CJC`) usually compare to the base-emitter zero-bias capacitance (`CJE`)?",
+    "answers": {
+      "a": "`CJC` is typically much larger than `CJE`.",
+      "b": "`CJC` is typically much smaller than `CJE`.",
+      "c": "`CJC` is approximately equal to `CJE`.",
+      "d": "`CJC` is always zero."
+    },
+    "correctAnswer": "a",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "3. In which BJT operating region does the base-collector *diffusion* capacitance become significant and dominate the total B-C capacitance?",
+    "answers": {
+      "a": "Forward-Active Region",
+      "b": "Reverse-Active Region",
+      "c": "Saturation Region",
+      "d": "Cutoff Region"
+    },
+    "correctAnswer": "c",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "4. In which BJT operating region does the base-collector *depletion* capacitance almost exclusively determine the total B-C capacitance?",
+    "answers": {
+      "a": "Forward-Active Region",
+      "b": "Saturation Region",
+      "c": "Deep Saturation",
+      "d": "Forward bias"
+    },
+    "correctAnswer": "a",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "5. What physical property is the main reason that the reverse transit time (`TR`) is typically much larger than the forward transit time (`TF`)?",
+    "answers": {
+      "a": "The base is very thin and heavily doped.",
+      "b": "The collector is wide and lightly doped, making it a poor 'emitter' in reverse mode.",
+      "c": "The emitter-base junction area is smaller than the collector-base area.",
+      "d": "The base-collector built-in potential is higher."
+    },
+    "correctAnswer": "b",
+    "difficulty": "advanced"
+  },
+  {
+    "question": "6. The parameter `MJC` (B-C Grading Coefficient) is extracted to be approximately one-third. What does this value imply about the doping profile of the junction?",
+    "answers": {
+      "a": "It is a linearly graded junction.",
+      "b": "It is an abrupt (step) junction.",
+      "c": "It is a hyper-abrupt junction.",
+      "d": "The doping is uniform (intrinsic)."
+    },
+    "correctAnswer": "a",
+    "difficulty": "intermediate"
+  },
+  {
+    "question": "7. When measuring the B-C capacitance versus voltage, what is the standard bias condition for the base-emitter junction?",
+    "answers": {
+      "a": "It is forward-biased to match the collector.",
+      "b": "It is shorted (zero volts) or reverse-biased.",
+      "c": "It is left floating (open-circuit).",
+      "d": "It is connected to a large current source."
+    },
+    "correctAnswer": "b",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "8. What is the purpose of the SPICE parameter `FCC` (Forward-Bias Capacitance Coefficient) in the B-C capacitance model?",
+    "answers": {
+      "a": "It models the frequency dependence of the capacitance.",
+      "b": "It sets the breakdown voltage for the junction.",
+      "c": "It creates a linear approximation for the depletion capacitance under forward bias.",
+      "d": "It models the capacitance's dependence on temperature."
+    },
+    "correctAnswer": "c",
+    "difficulty": "advanced"
+  },
+  {
+    "question": "9. If a BJT has a very large physical base-collector junction area, which extracted capacitance parameter would be most directly affected?",
+    "answers": {
+      "a": "`VJC` (Built-in Potential)",
+      "b": "`MJC` (Grading Coefficient)",
+      "c": "`TR` (Reverse Transit Time)",
+      "d": "`CJC` (Zero-Bias Capacitance)"
+    },
+    "correctAnswer": "d",
+    "difficulty": "beginner"
+  },
+  {
+    "question": "10. How does the B-C depletion capacitance change as the *reverse bias* voltage across the B-C junction is increased?",
+    "answers": {
+      "a": "It increases.",
+      "b": "It decreases.",
+      "c": "It stays exactly the same.",
+      "d": "It first increases, then decreases."
+    },
+    "correctAnswer": "b",
+    "difficulty": "beginner"
+  }
+
+  ]
+}
